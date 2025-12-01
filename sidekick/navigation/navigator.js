@@ -10,9 +10,9 @@ import SignupScreen from '../screens/SignupScreen.js';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import WelcomeScreen from '../screens/WelcomeScreen.js';
+import TimerScreen from '../screens/TimerScreen.js';
 
 // placeholder screens
-const TimerScreen = () => <View><Text>Timer placeholder</Text></View>;
 const StoreScreen = () => <View><Text>Store placeholder</Text></View>;
 const LessonsScreen = () => <View><Text>Lessons placeholder</Text></View>;
 
@@ -69,9 +69,16 @@ function MainNavigator() {
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Sidekick' }}/>
-            <Tab.Screen name="Timer" component={TimerScreen} />
             <Tab.Screen name="Store" component={StoreScreen} />
             <Tab.Screen name="Lessons" component={LessonsScreen} />
+            <Tab.Screen 
+                name="Timer" 
+                component={TimerScreen} 
+                options={{ 
+                    title: 'Focus',
+                    headerShown: false
+                }} 
+            />
         </Tab.Navigator>
     );
 }

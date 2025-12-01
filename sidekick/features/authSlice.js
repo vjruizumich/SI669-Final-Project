@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { auth, db, storage } from '../Secrets.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const uploadProfileImage = async (uri, uid) => {
@@ -37,7 +37,7 @@ export const registerUser = createAsyncThunk(
                 inventory: [], 
                 equippedItems: {}, 
                 createdAt: new Date().toISOString(),
-                // later -> add stats for "nice-to-have" features here (i.e. totalSessions)
+                // !LATER! -> add stats for "nice-to-have" features here (i.e. totalSessions)
             };
 
             await setDoc(doc(db, 'users', uid), userData);
@@ -79,6 +79,26 @@ export const logoutUser = createAsyncThunk(
     }
 );
 
+export const updateCurrency = createAsyncThunk(
+    'auth/updateCurrency',
+    async (amount, { getState, rejectWithValue }) => {
+        try {
+            const { user } = getState().auth;
+            if (!user) return rejectWithValue("No user logged in");
+
+            const userRef = doc(db, 'users', user.uid);
+            
+            await updateDoc(userRef, {
+                currency: increment(amount)
+            });
+
+            return user.currency + amount;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: 'auth',
     initialState: {
@@ -93,29 +113,21 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(registerUser.pending, (state) => { state.status = 'loading'; })
             .addCase(registerUser.fulfilled, (state, action) => {
                 state.status = 'succeeded';
                 state.user = action.payload;
-                state.error = null;
             })
-            .addCase(registerUser.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload;
-            })
-            .addCase(loginUser.pending, (state) => { state.status = 'loading'; })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.status = 'succeeded';
                 state.user = action.payload;
-                state.error = null;
-            })
-            .addCase(loginUser.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload;
             })
             .addCase(logoutUser.fulfilled, (state) => {
                 state.user = null;
-                state.status = 'idle';
+            })
+            .addCase(updateCurrency.fulfilled, (state, action) => {
+                if (state.user) {
+                    state.user.currency = action.payload;
+                }
             });
     },
 });
